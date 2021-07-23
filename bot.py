@@ -1,10 +1,8 @@
 import random
-import nltk
+import pickle
 import json
-import sklearn
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.ensemble import RandomForestClassifier
-
-G_UNKNOWN_ANSWER = ['Что за чушь ты несёшь?', 'Мы говорим с тобой на разных языках :(', 'Повтори ещё раз, я ничешуя не понял!']
 
 # def clear_message(text):
 #     text_lower = text.lower()
@@ -24,14 +22,8 @@ G_UNKNOWN_ANSWER = ['Что за чушь ты несёшь?', 'Мы говор�
 def bot(vectorizer_model, classifier_model, dictionary):
     while(True):
         input_message = input()
-        # clean_message = clear_message(input_message)
-        # request = get_request(clean_message)
         intent = get_intent_by_model(vectorizer_model, classifier_model, input_message)
-        print("Категория:", intent)
-        if input_message == 'unknown':
-            print(random.choice(G_UNKNOWN_ANSWER))
-        else:
-            print(random.choice(dictionary[intent]['responses']))
+        print(random.choice(dictionary[intent]['responses']))
 
 def load_data():
     dictionary_file = "dictionary.json"
@@ -50,7 +42,7 @@ def vectorize(dictionary):
 
 def fit_models(dictionary):
     x, y = vectorize(dictionary)
-    vectorizer_model = sklearn.feature_extraction.text.CountVectorizer()
+    vectorizer_model = CountVectorizer()
     x_vectorized = vectorizer_model.fit_transform(x)
     classifier_model = RandomForestClassifier(random_state=42)
     classifier_model = classifier_model.fit(x_vectorized, y)
@@ -61,10 +53,20 @@ def get_intent_by_model(vectorizer_model, classifier_model, text):
     vectorized_text = vectorizer_model.transform([text])
     return classifier_model.predict(vectorized_text)[0]
 
+def dump_models(vectorizer_model, classifier_model):
+    vectorizer = open('vectorizer_model', 'wb')
+    classifier = open('classifier_model', 'wb')
+    pickle.dump(vectorizer_model, vectorizer)
+    pickle.dump(classifier_model, classifier)
+    vectorizer.close()
+    classifier.close()
+
 def main():
     dictionary = load_data()
     vectorizer_model, classifier_model = fit_models(dictionary)
-    bot(vectorizer_model, classifier_model, dictionary)
+    dump_models(vectorizer_model, classifier_model)
+    # bot(vectorizer_model, classifier_model, dictionary)
+
 
 
 if __name__== '__main__':
